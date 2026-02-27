@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Campuz — Email Verification</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0a0b0f;
+      --surface:  #111318;
+      --border:   #1e2028;
+      --accent:   #6c63ff;
+      --accent2:  #ff6584;
+      --accent3:  #3ecf8e;
+      --text:     #e8eaf0;
+      --muted:    #6b7280;
+      --radius:   16px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 1rem 0;
+    }
+
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .verify-wrapper {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 420px;
+      padding: 2rem 1.5rem;
+      margin: auto;
+    }
+
+    .brand {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .brand h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 3rem;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #6c63ff, #ff6584);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 0.4rem;
+    }
+
+    .card {
+      background: rgba(17, 19, 24, 0.85);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+
+    .verify-icon {
+      font-size: 3.5rem;
+      margin-bottom: 1.5rem;
+      display: block;
+    }
+
+    .verify-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .verify-message {
+      font-size: 0.95rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 1.5rem auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .status-container {
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+
+    .status-container.success {
+      display: block;
+      background: rgba(62, 207, 142, 0.1);
+      border: 1px solid rgba(62, 207, 142, 0.3);
+    }
+
+    .status-container.success .verify-icon {
+      color: var(--accent3);
+    }
+
+    .status-container.error {
+      display: block;
+      background: rgba(255, 101, 132, 0.1);
+      border: 1px solid rgba(255, 101, 132, 0.3);
+    }
+
+    .status-container.error .verify-icon {
+      color: var(--accent2);
+    }
+
+    .status-container.error .verify-title {
+      color: var(--accent2);
+    }
+
+    .status-container.error .verify-message {
+      color: var(--accent2);
+    }
+
+    .btn-back {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, var(--accent), #a855f7);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.1s;
+      letter-spacing: 0.3px;
+      margin-top: 1rem;
+    }
+
+    .btn-back:hover {
+      opacity: 0.9;
+    }
+
+    .btn-back:active {
+      transform: scale(0.98);
+    }
+
+    .countdown {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 480px) {
+      .verify-wrapper {
+        max-width: 95%;
+        padding: 1rem 0.75rem;
+      }
+
+      .brand h1 {
+        font-size: 2rem;
+      }
+
+      .card {
+        padding: 1.5rem;
+      }
+
+      .verify-icon {
+        font-size: 3rem;
+      }
+
+      .verify-title {
+        font-size: 1.2rem;
+      }
+
+      .verify-message {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div class="verify-wrapper" id="verify-wrapper">
+  <div class="brand">
+    <h1>Campuz</h1>
+    <p>Your classroom. Amplified.</p>
+  </div>
+
+  <div class="card">
+    <div id="loading-state">
+      <span class="verify-icon">✉️</span>
+      <h2 class="verify-title">Verifying Email</h2>
+      <p class="verify-message">Please wait while we verify your email address...</p>
+      <div class="spinner"></div>
+    </div>
+
+    <div id="success-state" class="status-container success" style="display: none;">
+      <span class="verify-icon">✅</span>
+      <h2 class="verify-title">Email Verified!</h2>
+      <p class="verify-message">Your email has been successfully verified. You can now log in to your account.</p>
+      <button class="btn-back" onclick="redirectToLogin()">Back to Login →</button>
+      <div class="countdown">Redirecting in <span id="countdown">5</span> seconds...</div>
+    </div>
+
+    <div id="error-state" class="status-container error" style="display: none;">
+      <span class="verify-icon">❌</span>
+      <h2 class="verify-title">Verification Failed</h2>
+      <p class="verify-message" id="error-message">The verification link has expired or is invalid. Please request a new verification email.</p>
+      <button class="btn-back" onclick="requestNewVerification()">Request New Link →</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/supabase.js"></script>
+<script>
+  // ---- Three.js Particle Background ----
+  (function initParticles() {
+    const canvas = document.getElementById('bg-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.z = 5;
+
+    const count = 800;
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count * 3; i++) {
+      positions[i] = (Math.random() - 0.5) * 20;
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const mat = new THREE.PointsMaterial({
+      color: 0x6c63ff,
+      size: 0.04,
+      transparent: true,
+      opacity: 0.6
+    });
+
+    const points = new THREE.Points(geo, mat);
+    scene.add(points);
+
+    function animate() {
+      requestAnimationFrame(animate);
+      points.rotation.y += 0.0005;
+      points.rotation.x += 0.0002;
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    });
+  })();
+
+  // ---- GSAP Entry Animation ----
+  gsap.from('#verify-wrapper', {
+    duration: 1,
+    y: 40,
+    opacity: 0,
+    ease: 'power3.out'
+  });
+
+  // ---- Verification Logic ----
+  async function verifyEmail() {
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+
+    const errorDescription = searchParams.get('error_description') || hashParams.get('error_description');
+    const errorCode = searchParams.get('error_code') || hashParams.get('error_code');
+    if (errorDescription || errorCode) {
+      showError(errorDescription || 'Verification failed. The link may be invalid or expired.');
+      return;
+    }
+
+    const code = searchParams.get('code') || hashParams.get('code');
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+
+    if (!code && !accessToken) {
+      showError('No verification link found. Please check your email for the verification link.');
+      return;
+    }
+
+    try {
+      if (code) {
+        const { error } = await sb.auth.exchangeCodeForSession(code);
+        if (error) throw error;
+      } else if (accessToken && refreshToken) {
+        const { error } = await sb.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+        if (error) throw error;
+      }
+
+      showSuccess();
+    } catch (error) {
+      console.error('Verification error:', error);
+      showError(error.message || 'Failed to verify email. The link may have expired.');
+    }
+  }
+
+  function showSuccess() {
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('error-state').style.display = 'none';
+    document.getElementById('success-state').style.display = 'block';
+
+    // Countdown and auto-redirect
+    let remaining = 5;
+    const countdownEl = document.getElementById('countdown');
+    const interval = setInterval(() => {
+      remaining--;
+      countdownEl.textContent = remaining;
+      if (remaining === 0) {
+        clearInterval(interval);
+        redirectToLogin();
+      }
+    }, 1000);
+  }
+
+  function showError(message) {
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('success-state').style.display = 'none';
+    document.getElementById('error-state').style.display = 'block';
+    document.getElementById('error-message').textContent = message;
+  }
+
+  function redirectToLogin() {
+    window.location.href = 'login.html';
+  }
+
+  function requestNewVerification() {
+    // Redirect to login/signup to request new verification
+    window.location.href = 'login.html?tab=signup';
+  }
+
+  // Run verification on page load
+  window.addEventListener('load', verifyEmail);
+</script>
+</body>
+</html>

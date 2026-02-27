@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Campuz</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <link rel="stylesheet" href="css/app.css"/>
+</head>
+<body>
+
+<!-- Mobile overlay when sidebar open -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="app-container">
+
+  <!-- ===== SIDEBAR ===== -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">Campuz</div>
+
+    <div class="nav-item active" id="nav-home" onclick="navigateAndCloseSidebar('home')">
+      <span class="nav-icon">🏠</span> Home
+    </div>
+    <div class="nav-item" id="nav-chat" onclick="navigateAndCloseSidebar('chat')">
+      <span class="nav-icon">💬</span> Class Chat
+    </div>
+    <div class="nav-item" id="nav-profile" onclick="navigateAndCloseSidebar('profile')">
+      <span class="nav-icon">👤</span> Profile
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar" id="sidebar-avatar">?</div>
+        <span class="user-name" id="sidebar-name">Loading…</span>
+        <button class="logout-btn" onclick="handleLogout()" title="Logout">⎋</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="main-content">
+
+    <!-- Top bar -->
+    <div class="top-bar">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <div class="page-title" id="page-title">Home Feed</div>
+      <div style="width:32px"></div><!-- spacer -->
+    </div>
+
+    <!-- ===== HOME / FEED ===== -->
+    <div class="section active" id="section-home">
+
+      <!-- Create post -->
+      <div class="create-card">
+        <p class="section-heading">Share something</p>
+        <textarea id="post-textarea" placeholder="What's on your mind…" rows="3"></textarea>
+        <div class="create-actions">
+          <button class="btn-primary" onclick="createPost(currentUser)">Post →</button>
+          <label class="anon-toggle" title="Post anonymously">
+            <input type="checkbox" id="post-anon"/>
+            <div class="toggle-track"></div>
+            Post Anonymously
+          </label>
+        </div>
+      </div>
+
+      <!-- Posts feed -->
+      <p class="section-heading">Recent Posts</p>
+      <div id="posts-list">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+    <!-- ===== CHAT (Community-based like WhatsApp) ===== -->
+    <div class="section" id="section-chat">
+      <!-- Communities Sidebar -->
+      <div class="chat-sidebar">
+        <div class="chat-sidebar-header">
+          <h3>🏘️ Communities</h3>
+          <button class="add-community-btn" onclick="showCreateCommunityModal()" title="Create community">+</button>
+        </div>
+        <div class="communities-list" id="communities-list">
+          <div class="loading-text">Loading communities...</div>
+        </div>
+      </div>
+
+      <!-- Sections Sidebar -->
+      <div class="sections-sidebar" id="sections-sidebar" style="display:none;">
+        <div class="sections-header">
+          <button class="back-btn" onclick="goBackToCommunities()">← Back</button>
+          <h3 id="community-title">Community</h3>
+          <button class="join-leave-btn" id="join-leave-btn" onclick="toggleCommunityMembership()" title="Join/Leave">👋</button>
+        </div>
+        <div class="members-info">
+          <div class="member-count" id="member-count">👥 0 members</div>
+        </div>
+        <div class="sections-list" id="sections-list">
+          <div class="loading-text">Loading sections...</div>
+        </div>
+      </div>
+
+      <!-- Members Sidebar -->
+      <div class="members-sidebar" id="members-sidebar" style="display:none;">
+        <div class="members-header">
+          <h3>👥 Members</h3>
+          <span class="member-count-badge" id="member-count-badge">0</span>
+        </div>
+        <div class="members-list" id="members-list">
+          <div class="loading-text">Loading members...</div>
+        </div>
+      </div>
+
+      <!-- Main Chat Area -->
+      <div class="chat-main" id="chat-main" style="display:none;">
+        <!-- Section Header -->
+        <div class="chat-header">
+          <div class="section-info">
+            <button class="back-btn" onclick="goBackToSections()">← Back</button>
+            <div>
+              <h2 id="section-title">Select a section</h2>
+              <p id="section-desc">Community > Section</p>
+            </div>
+          </div>
+          <div class="chat-header-actions">
+            <div class="view-toggle">
+              <button class="toggle-btn active" id="messages-tab" onclick="switchChatView('messages')">💬 Messages</button>
+              <button class="toggle-btn" id="polls-tab" onclick="switchChatView('polls')">📊 Polls</button>
+            </div>
+            <button class="chat-search-btn" onclick="toggleChatSearch()" title="Search">🔍</button>
+          </div>
+        </div>
+
+        <!-- Chat Search (Hidden by default) -->
+        <div class="chat-search-area" id="chat-search-area" style="display:none;">
+          <input type="text" id="chat-search-input" placeholder="Search messages…" />
+          <button class="search-close-btn" onclick="toggleChatSearch()">✕</button>
+        </div>
+
+        <!-- Messages View -->
+        <div id="messages-view" class="chat-view-content">
+          <!-- Messages Area -->
+          <div class="chat-messages" id="chat-messages">
+            <div class="spinner"></div>
+          </div>
+
+          <!-- Typing Indicator -->
+          <div class="typing-indicator" id="typing-indicator" style="display:none;">
+            <div class="typing-item">
+              <span id="typing-user">Someone</span> is typing
+              <span class="typing-dots">
+                <span></span><span></span><span></span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Chat Input Area -->
+          <div class="chat-input-area">
+            <div class="input-wrapper">
+              <input type="text" id="chat-input" placeholder="Type a message here…"
+                     onkeydown="handleChatKeydown(event)"
+                     oninput="notifyTyping()"/>
+              <button class="emoji-btn" onclick="showEmojiPicker()" title="Add emoji">😊</button>
+            </div>
+            <button class="send-btn" onclick="sendMessage()" title="Send message">➤</button>
+          </div>
+        </div>
+
+        <!-- Polls View -->
+        <div id="polls-view" class="chat-view-content" style="display:none;">
+          <div class="polls-container" id="polls-container">
+            <div class="spinner"></div>
+          </div>
+          <button class="create-poll-btn" onclick="showCreatePollModal()">➕ Create Poll</button>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="chat-empty" id="chat-empty">
+        <div class="empty-state">
+          <div class="icon">💬</div>
+          <h2>Select a Community</h2>
+          <p>Choose a community from the list to get started</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Community Modal -->
+    <div class="modal-overlay" id="create-community-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Create Community</h3>
+          <button class="modal-close" onclick="closeModal('create-community-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <label class="input-label">Community Name</label>
+          <input type="text" id="community-name-input" class="modal-input" placeholder="e.g., 1st Year CSE" />
+          
+          <label class="input-label">Description</label>
+          <textarea id="community-desc-input" class="modal-input" placeholder="Describe your community..." rows="3"></textarea>
+          
+          <div id="create-community-error" class="error-msg" style="display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeModal('create-community-modal')">Cancel</button>
+          <button class="btn-primary" onclick="createCommunity()">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Section Modal -->
+    <div class="modal-overlay" id="add-section-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Add Section</h3>
+          <button class="modal-close" onclick="closeModal('add-section-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <label class="input-label">Section Name</label>
+          <input type="text" id="section-name-input" class="modal-input" placeholder="e.g., Section-1" />
+          
+          <label class="input-label">Description</label>
+          <textarea id="section-desc-input" class="modal-input" placeholder="Describe this section..." rows="3"></textarea>
+          
+          <div id="add-section-error" class="error-msg" style="display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeModal('add-section-modal')">Cancel</button>
+          <button class="btn-primary" onclick="addSection()">Add Section</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Poll Modal (for chat sections) -->
+    <div class="modal-overlay" id="create-poll-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>📊 Create Poll</h3>
+          <button class="modal-close" onclick="closeModal('create-poll-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <label class="input-label">Question</label>
+          <input type="text" id="poll-question-input" class="modal-input" placeholder="What's your question?" maxlength="200" />
+          
+          <label class="input-label">Option A</label>
+          <input type="text" id="poll-option-a-input" class="modal-input" placeholder="First option" maxlength="100" />
+          
+          <label class="input-label">Option B</label>
+          <input type="text" id="poll-option-b-input" class="modal-input" placeholder="Second option" maxlength="100" />
+          
+          <label class="input-label">Option C</label>
+          <input type="text" id="poll-option-c-input" class="modal-input" placeholder="Third option" maxlength="100" />
+          
+          <label class="input-label">Option D</label>
+          <input type="text" id="poll-option-d-input" class="modal-input" placeholder="Fourth option" maxlength="100" />
+          
+          <div id="create-poll-error" class="error-msg" style="display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeModal('create-poll-modal')">Cancel</button>
+          <button class="btn-primary" onclick="createSectionPoll()">Create Poll</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== POLLS ===== -->
+    <div class="section" id="section-polls">
+
+      <!-- Create poll -->
+      <div class="create-card" style="margin-bottom:1.25rem">
+        <p class="section-heading">Create a Poll</p>
+        <div class="poll-inputs">
+          <input type="text" id="poll-question" placeholder="Ask a question…"/>
+          <input type="text" id="poll-opt-a" placeholder="Option A"/>
+          <input type="text" id="poll-opt-b" placeholder="Option B"/>
+          <input type="text" id="poll-opt-c" placeholder="Option C"/>
+        </div>
+        <button class="btn-primary" onclick="createPoll(currentUser)">Launch Poll →</button>
+      </div>
+
+      <p class="section-heading">Active Polls</p>
+      <div id="polls-list">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+    <!-- ===== PROFILE ===== -->
+    <div class="section" id="section-profile">
+      <div class="profile-hero">
+        <!-- Profile Photo with Upload -->
+        <div class="profile-avatar-wrapper">
+          <div class="profile-avatar" id="profile-avatar">
+            <img id="profile-avatar-img" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;" />
+            <span id="profile-avatar-initials">?</span>
+          </div>
+          <button class="avatar-upload-btn" onclick="document.getElementById('avatar-upload-input').click()" title="Change profile photo">
+            📷
+          </button>
+          <input type="file" id="avatar-upload-input" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)" />
+        </div>
+
+        <div class="profile-name" id="profile-name">Loading…</div>
+        <div class="profile-email" id="profile-email"></div>
+
+        <!-- Profile Actions -->
+        <div class="profile-actions">
+          <button class="btn-profile-action" onclick="showEditProfileModal()">
+            ✏️ Edit Profile
+          </button>
+          <button class="btn-profile-action" onclick="handleLogout()">
+            🚪 Logout
+          </button>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-box">
+            <div class="stat-num" id="stat-posts">—</div>
+            <div class="stat-label">Posts</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" id="stat-comments">—</div>
+            <div class="stat-label">Comments</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" id="stat-polls">—</div>
+            <div class="stat-label">Polls</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Settings Card -->
+      <div class="card">
+        <p class="section-heading" style="margin-top:0">Settings</p>
+        <div class="profile-settings-list">
+          <div class="setting-item" onclick="showChangeNameModal()">
+            <span class="setting-icon">👤</span>
+            <div class="setting-info">
+              <div class="setting-title">Change Display Name</div>
+              <div class="setting-desc">Update your public display name</div>
+            </div>
+            <span class="setting-arrow">›</span>
+          </div>
+          <div class="setting-item" onclick="showChangePasswordModal()">
+            <span class="setting-icon">🔒</span>
+            <div class="setting-info">
+              <div class="setting-title">Change Password</div>
+              <div class="setting-desc">Update your account password</div>
+            </div>
+            <span class="setting-arrow">›</span>
+          </div>
+          <div class="setting-item" onclick="showAboutModal()">
+            <span class="setting-icon">ℹ️</span>
+            <div class="setting-info">
+              <div class="setting-title">About Campuz</div>
+              <div class="setting-desc">App version and information</div>
+            </div>
+            <span class="setting-arrow">›</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal-overlay" id="edit-profile-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Edit Profile</h3>
+          <button class="modal-close" onclick="closeModal('edit-profile-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <label class="input-label">Display Name</label>
+          <input type="text" id="edit-name-input" class="modal-input" placeholder="Enter your name" />
+          
+          <div id="edit-profile-error" class="error-msg" style="display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeModal('edit-profile-modal')">Cancel</button>
+          <button class="btn-primary" onclick="saveProfileName()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal-overlay" id="change-password-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Change Password</h3>
+          <button class="modal-close" onclick="closeModal('change-password-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <label class="input-label">New Password</label>
+          <input type="password" id="new-password-input" class="modal-input" placeholder="Enter new password" />
+          
+          <label class="input-label">Confirm New Password</label>
+          <input type="password" id="confirm-password-input" class="modal-input" placeholder="Confirm new password" />
+          
+          <div id="change-password-error" class="error-msg" style="display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeModal('change-password-modal')">Cancel</button>
+          <button class="btn-primary" onclick="saveNewPassword()">Update Password</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- About Modal -->
+    <div class="modal-overlay" id="about-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>About Campuz</h3>
+          <button class="modal-close" onclick="closeModal('about-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div style="text-align:center; padding:1rem 0;">
+            <div style="font-size:3rem; margin-bottom:0.5rem;">🎓</div>
+            <h2 style="font-family:'Syne', sans-serif; margin:0.5rem 0;">Campuz</h2>
+            <p style="color:var(--muted); font-size:0.9rem;">Version 1.0.0</p>
+            <p style="margin-top:1.5rem; line-height:1.6;">
+              Your modern college social hub.<br>
+              Connect, share, and engage with your classmates.
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-primary" onclick="closeModal('about-modal')">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modern Alert Modal -->
+    <div class="modern-modal-overlay" id="modern-alert-modal">
+      <div class="modern-modal-box alert-modal">
+        <div class="modern-modal-icon" id="alert-icon">ℹ️</div>
+        <div class="modern-modal-message" id="alert-message"></div>
+        <button class="modern-btn modern-btn-primary" onclick="closeModernAlert()">OK</button>
+      </div>
+    </div>
+
+    <!-- Modern Confirm Modal -->
+    <div class="modern-modal-overlay" id="modern-confirm-modal">
+      <div class="modern-modal-box confirm-modal">
+        <div class="modern-modal-icon">⚠️</div>
+        <div class="modern-modal-message" id="confirm-message"></div>
+        <div class="modern-modal-buttons">
+          <button class="modern-btn modern-btn-secondary" onclick="closeModernConfirm(false)">Cancel</button>
+          <button class="modern-btn modern-btn-danger" id="confirm-btn-text" onclick="closeModernConfirm(true)">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modern Voters List Modal -->
+    <div class="modern-modal-overlay" id="voters-modal">
+      <div class="modern-modal-box voters-modal">
+        <div class="modern-modal-header">
+          <h3 id="voters-title">Voters</h3>
+          <button class="modal-close-x" onclick="closeVotersModal()">✕</button>
+        </div>
+        <div class="voters-list" id="voters-list"></div>
+        <button class="modern-btn modern-btn-primary" onclick="closeVotersModal()">Close</button>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /app-container -->
+
+<!-- Scripts -->
+<script src="js/supabase.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/polls-chat.js"></script>
+<script src="js/polls.js"></script>
+<script>
+// ============================================================
+//  APP BOOTSTRAP
+// ============================================================
+let currentUser = null;
+
+(async function boot() {
+  // Auth guard — redirect to login if not signed in
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  // Load user profile
+  currentUser = await getCurrentUser();
+  if (!currentUser) {
+    await sb.auth.signOut();
+    window.location.href = 'login.html?reason=account_missing';
+    return;
+  }
+
+  // Populate sidebar & profile
+  populateUserUI();
+
+  // Load initial section
+  loadPosts(currentUser);
+
+  // GSAP entrance
+  gsap.from('.sidebar', { duration: 0.5, x: -30, opacity: 0, ease: 'power2.out' });
+  gsap.from('.top-bar', { duration: 0.4, y: -20, opacity: 0, ease: 'power2.out', delay: 0.1 });
+  gsap.from('.section.active', { duration: 0.5, y: 20, opacity: 0, ease: 'power2.out', delay: 0.2 });
+})();
+
+// ---- Populate sidebar & profile with user data ---------------
+function populateUserUI() {
+  const initials = currentUser.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+  // Sidebar
+  document.getElementById('sidebar-avatar').textContent = initials;
+  document.getElementById('sidebar-name').textContent   = currentUser.name;
+
+  // Profile section - show avatar if exists, otherwise show initials
+  const avatarImg = document.getElementById('profile-avatar-img');
+  const avatarInitials = document.getElementById('profile-avatar-initials');
+  
+  if (currentUser.avatar_url) {
+    avatarImg.src = currentUser.avatar_url;
+    avatarImg.style.display = 'block';
+    avatarInitials.style.display = 'none';
+  } else {
+    avatarImg.style.display = 'none';
+    avatarInitials.style.display = 'flex';
+    avatarInitials.textContent = initials;
+  }
+
+  document.getElementById('profile-name').textContent   = currentUser.name;
+  document.getElementById('profile-email').textContent  = currentUser.email;
+
+  loadProfileStats();
+}
+
+// ---- Profile stats (cached) -------------------------------------------
+let profileStatCache = { posts: 0, comments: 0, polls: 0, timestamp: 0 };
+
+async function loadProfileStats() {
+  const now = Date.now();
+  // Cache stats for 30 seconds
+  if (now - profileStatCache.timestamp < 30000 && profileStatCache.timestamp > 0) {
+    document.getElementById('stat-posts').textContent    = profileStatCache.posts;
+    document.getElementById('stat-comments').textContent = profileStatCache.comments;
+    document.getElementById('stat-polls').textContent    = profileStatCache.polls;
+    return;
+  }
+
+  try {
+    const [postsRes, commentsRes, pollsRes] = await Promise.all([
+      sb.from('posts').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id),
+      sb.from('comments').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id),
+      sb.from('polls').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id)
+    ]);
+
+    profileStatCache = {
+      posts: postsRes.count ?? 0,
+      comments: commentsRes.count ?? 0,
+      polls: pollsRes.count ?? 0,
+      timestamp: now
+    };
+
+    document.getElementById('stat-posts').textContent    = profileStatCache.posts;
+    document.getElementById('stat-comments').textContent = profileStatCache.comments;
+    document.getElementById('stat-polls').textContent    = profileStatCache.polls;
+  } catch (error) {
+    console.error('Failed to load profile stats:', error);
+  }
+}
+
+// ---- Section navigation --------------------------------------
+const sectionTitles = {
+  home:    'Home Feed',
+  chat:    'Class Chat',
+  polls:   'Polls',
+  profile: 'My Profile'
+};
+
+let chatInitialized = false;
+
+function switchSection(name) {
+  // Update nav items
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-' + name).classList.add('active');
+
+  // Update page title
+  document.getElementById('page-title').textContent = sectionTitles[name];
+
+  // Hide all sections, show target
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  const target = document.getElementById('section-' + name);
+  target.classList.add('active');
+
+  // Lazy-init chat once
+  if (name === 'chat' && !chatInitialized) {
+    chatInitialized = true;
+    initChat(currentUser);
+  }
+
+  // Reload polls each time user opens section
+  if (name === 'polls') loadPolls(currentUser);
+
+  closeSidebar();
+}
+
+// ---- Logout --------------------------------------------------
+async function handleLogout() {
+  await sb.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+// ---- Mobile sidebar ------------------------------------------
+function toggleSidebar() {
+  const sidebar  = document.getElementById('sidebar');
+  const overlay  = document.getElementById('sidebar-overlay');
+  
+  console.log('🔍 Toggle sidebar clicked');
+  console.log('Sidebar element:', sidebar);
+  console.log('Sidebar computed styles:', sidebar ? window.getComputedStyle(sidebar).transform : 'N/A');
+  
+  if (!sidebar || !overlay) {
+    console.error('❌ Sidebar or overlay not found!');
+    return;
+  }
+  
+  const isOpen = sidebar.classList.contains('open');
+  console.log('Currently open?', isOpen);
+  
+  if (isOpen) {
+    console.log('Closing sidebar...');
+    closeSidebar();
+  } else {
+    console.log('Opening sidebar...');
+    sidebar.classList.add('open');
+    overlay.classList.add('show');
+    console.log('Sidebar classes after open:', sidebar.className);
+    console.log('Transform after open:', window.getComputedStyle(sidebar).transform);
+  }
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('show');
+}
+
+// Auto-close sidebar when navigating (for mobile/any device)
+function navigateAndCloseSidebar(sectionId) {
+  switchSection(sectionId);
+  closeSidebar();
+}
+
+// Close sidebar with Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar && sidebar.classList.contains('open')) {
+      closeSidebar();
+    }
+  }
+});
+
+// ---- Profile Photo Upload ------------------------------------
+async function handleAvatarUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    showModernAlert('Please select an image file', '⚠️');
+    return;
+  }
+
+  // Validate file size (max 2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    showModernAlert('Image size must be less than 2MB', '⚠️');
+    return;
+  }
+
+  try {
+    // Show loading state
+    const avatarImg = document.getElementById('profile-avatar-img');
+    const avatarInitials = document.getElementById('profile-avatar-initials');
+    avatarInitials.textContent = '⏳';
+    avatarInitials.style.display = 'flex';
+    avatarImg.style.display = 'none';
+
+    // Generate unique filename
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`;
+    const filePath = `avatars/${fileName}`;
+
+    // Upload to Supabase Storage
+    const { data, error: uploadError } = await sb.storage
+      .from('campuz-avatars')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    // Get public URL
+    const { data: urlData } = sb.storage
+      .from('campuz-avatars')
+      .getPublicUrl(filePath);
+
+    const publicUrl = urlData.publicUrl;
+
+    // Update user record in database
+    const { error: updateError } = await sb
+      .from('users')
+      .update({ avatar_url: publicUrl })
+      .eq('id', currentUser.id);
+
+    if (updateError) throw updateError;
+
+    // Update local user object and UI
+    currentUser.avatar_url = publicUrl;
+    avatarImg.src = publicUrl;
+    avatarImg.style.display = 'block';
+    avatarInitials.style.display = 'none';
+
+    // Show success message
+    showToast('Profile photo updated successfully! 🎉');
+
+  } catch (error) {
+    console.error('Avatar upload failed:', error);
+    
+    // Show error message based on error type
+    if (error.message.includes('Bucket not found')) {
+      showModernAlert('⚠️ Storage not configured. Please create a "campuz-avatars" bucket in Supabase Storage with public access.', '❌');
+    } else {
+      showModernAlert('Failed to upload photo: ' + error.message, '❌');
+    }
+    
+    // Restore initials on error
+    const initials = currentUser.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    document.getElementById('profile-avatar-initials').textContent = initials;
+  }
+}
+
+// ---- Modal Controls ------------------------------------------
+function showEditProfileModal() {
+  document.getElementById('edit-name-input').value = currentUser.name;
+  document.getElementById('edit-profile-error').style.display = 'none';
+  document.getElementById('edit-profile-modal').classList.add('show');
+}
+
+function showChangeNameModal() {
+  showEditProfileModal();
+}
+
+function showChangePasswordModal() {
+  document.getElementById('new-password-input').value = '';
+  document.getElementById('confirm-password-input').value = '';
+  document.getElementById('change-password-error').style.display = 'none';
+  document.getElementById('change-password-modal').classList.add('show');
+}
+
+function showAboutModal() {
+  document.getElementById('about-modal').classList.add('show');
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).classList.remove('show');
+}
+
+// Close modals on outside click
+window.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.classList.remove('show');
+  }
+});
+
+// ---- Save Profile Name ---------------------------------------
+async function saveProfileName() {
+  const newName = document.getElementById('edit-name-input').value.trim();
+  const errorEl = document.getElementById('edit-profile-error');
+
+  if (!newName) {
+    errorEl.textContent = 'Name cannot be empty';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  if (newName.length < 2) {
+    errorEl.textContent = 'Name must be at least 2 characters';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    const { error } = await sb
+      .from('users')
+      .update({ name: newName })
+      .eq('id', currentUser.id);
+
+    if (error) throw error;
+
+    // Update local state and UI
+    currentUser.name = newName;
+    populateUserUI();
+    closeModal('edit-profile-modal');
+    showToast('Profile updated successfully! ✅');
+
+  } catch (error) {
+    console.error('Failed to update name:', error);
+    errorEl.textContent = 'Failed to update name: ' + error.message;
+    errorEl.style.display = 'block';
+  }
+}
+
+// ---- Save New Password ---------------------------------------
+async function saveNewPassword() {
+  const newPassword = document.getElementById('new-password-input').value;
+  const confirmPassword = document.getElementById('confirm-password-input').value;
+  const errorEl = document.getElementById('change-password-error');
+
+  if (!newPassword || !confirmPassword) {
+    errorEl.textContent = 'Please fill in all fields';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    errorEl.textContent = 'Password must be at least 6 characters';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    errorEl.textContent = 'Passwords do not match';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    const { error } = await sb.auth.updateUser({ password: newPassword });
+
+    if (error) throw error;
+
+    closeModal('change-password-modal');
+    showToast('Password updated successfully! 🔒');
+
+  } catch (error) {
+    console.error('Failed to update password:', error);
+    errorEl.textContent = 'Failed to update password: ' + error.message;
+    errorEl.style.display = 'block';
+  }
+}
+
+// ---- Toast Notification --------------------------------------
+function showToast(message) {
+  const toast = document.createElement('div');
+  toast.className = 'toast-notification';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  setTimeout(() => toast.classList.add('show'), 10);
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// ============================================================
+// MODERN MODAL FUNCTIONS
+// ============================================================
+
+/**
+ * Show modern alert dialog (replaces native alert)
+ * @param {string} message - Message to display
+ * @param {string} icon - Emoji icon (default: ℹ️)
+ */
+function showModernAlert(message, icon = 'ℹ️') {
+  const modal = document.getElementById('modern-alert-modal');
+  const iconEl = modal.querySelector('.modern-modal-icon');
+  const messageEl = modal.querySelector('.modern-modal-message');
+  
+  iconEl.textContent = icon;
+  messageEl.textContent = message;
+  
+  modal.style.display = 'flex';
+  setTimeout(() => modal.classList.add('show'), 10);
+  
+  // Allow Enter key to close
+  const closeHandler = (e) => {
+    if (e.key === 'Enter') {
+      closeModernAlert();
+      document.removeEventListener('keydown', closeHandler);
+    }
+  };
+  document.addEventListener('keydown', closeHandler);
+}
+
+/**
+ * Close modern alert dialog
+ */
+function closeModernAlert() {
+  const modal = document.getElementById('modern-alert-modal');
+  modal.classList.remove('show');
+  setTimeout(() => {
+    modal.style.display = 'none';
+  }, 300);
+}
+
+/**
+ * Show modern confirm dialog (replaces native confirm)
+ * @param {string} message - Message to display
+ * @param {function} onConfirm - Callback when user confirms
+ * @param {string} confirmBtnText - Text for confirm button (default: "Confirm")
+ * @param {boolean} isDangerous - Use danger styling (default: false)
+ */
+function showModernConfirm(message, onConfirm, confirmBtnText = 'Confirm', isDangerous = false) {
+  const modal = document.getElementById('modern-confirm-modal');
+  const messageEl = modal.querySelector('.modern-modal-message');
+  const confirmBtn = document.getElementById('confirm-btn-text');
+  
+  messageEl.textContent = message;
+  confirmBtn.textContent = confirmBtnText;
+  
+  // Update button style
+  if (isDangerous) {
+    confirmBtn.className = 'modern-btn modern-btn-danger';
+  } else {
+    confirmBtn.className = 'modern-btn modern-btn-primary';
+  }
+  
+  // Store callback
+  modal.dataset.onConfirm = 'pending';
+  window._modernConfirmCallback = onConfirm;
+  
+  modal.style.display = 'flex';
+  setTimeout(() => modal.classList.add('show'), 10);
+  
+  // Allow Enter = confirm, Escape = cancel
+  const keyHandler = (e) => {
+    if (e.key === 'Enter') {
+      closeModernConfirm(true);
+      document.removeEventListener('keydown', keyHandler);
+    } else if (e.key === 'Escape') {
+      closeModernConfirm(false);
+      document.removeEventListener('keydown', keyHandler);
+    }
+  };
+  document.addEventListener('keydown', keyHandler);
+}
+
+/**
+ * Close modern confirm dialog and execute callback if confirmed
+ * @param {boolean} confirmed - Whether user confirmed
+ */
+function closeModernConfirm(confirmed) {
+  const modal = document.getElementById('modern-confirm-modal');
+  modal.classList.remove('show');
+  
+  setTimeout(() => {
+    modal.style.display = 'none';
+    
+    if (window._modernConfirmCallback) {
+      window._modernConfirmCallback(confirmed);
+      window._modernConfirmCallback = null;
+    }
+  }, 300);
+}
+
+/**
+ * Show voters modal with list of users who voted for an option
+ * @param {Array} voters - Array of voter objects {id, username, full_name, avatar_url}
+ * @param {string} optionName - Name of the option (e.g., "Option A")
+ */
+function showVotersModal(voters, optionName) {
+  const modal = document.getElementById('voters-modal');
+  const headerTitle = modal.querySelector('.modern-modal-header h3');
+  const votersList = modal.querySelector('.voters-list');
+  
+  headerTitle.textContent = `Voters for ${optionName}`;
+  votersList.innerHTML = '';
+  
+  if (voters.length === 0) {
+    votersList.innerHTML = '<p style="text-align: center; color: var(--muted); padding: 2rem;">No voters yet</p>';
+  } else {
+    voters.forEach(voter => {
+      const voterItem = document.createElement('div');
+      voterItem.className = 'voter-item';
+      
+      const avatarInitial = (voter.full_name || voter.username || '?').charAt(0).toUpperCase();
+      
+      voterItem.innerHTML = `
+        <div class="voter-avatar">${avatarInitial}</div>
+        <div class="voter-name">${voter.full_name || voter.username || 'Anonymous'}</div>
+      `;
+      
+      votersList.appendChild(voterItem);
+    });
+  }
+  
+  modal.style.display = 'flex';
+  setTimeout(() => modal.classList.add('show'), 10);
+}
+
+/**
+ * Close voters modal
+ */
+function closeVotersModal() {
+  const modal = document.getElementById('voters-modal');
+  modal.classList.remove('show');
+  setTimeout(() => {
+    modal.style.display = 'none';
+  }, 300);
+}
+
+// Close modals on overlay click
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modern-modal-overlay')) {
+    if (e.target.id === 'modern-alert-modal') closeModernAlert();
+    if (e.target.id === 'modern-confirm-modal') closeModernConfirm(false);
+    if (e.target.id === 'voters-modal') closeVotersModal();
+  }
+});
+
+</script>
+</body>
+</html>
