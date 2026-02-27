@@ -71,6 +71,7 @@
       letter-spacing: -1px;
       background: linear-gradient(135deg, #6c63ff, #ff6584);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
@@ -745,10 +746,24 @@
   // ---- Check if already logged in ----
   (async () => {
     const { data: { session } } = await sb.auth.getSession();
-    if (session) window.location.href = 'index.html';
+    const params = new URLSearchParams(window.location.search);
+    const reason = params.get('reason');
+    if (reason === 'account_missing') {
+      showError('Your account was deleted or is no longer available. Please sign up again.');
+    }
+
+    if (session) {
+      const profile = await getCurrentUser();
+      if (!profile) {
+        await sb.auth.signOut();
+        showError('Your account was deleted or is no longer available. Please sign up again.');
+      } else {
+        window.location.href = 'index.html';
+        return;
+      }
+    }
 
     // Check for tab parameter in URL (e.g., ?tab=signup)
-    const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
     if (tab === 'signup') {
       switchTab('signup');
