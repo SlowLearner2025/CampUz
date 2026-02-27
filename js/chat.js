@@ -7,6 +7,8 @@ let currentCommunity = null;
 let currentSection = null;
 let currentCommunityName = null;
 let typingTimeout = null;
+let chatReconnectAttempts = 0;
+let chatReconnectTimer = null;
 
 // ---- Initialize chat -----------------------------------------
 async function initChat(user) {
@@ -222,6 +224,11 @@ async function loadMessages() {
 
 // ---- Subscribe to new messages -------------------------------
 function subscribeToChat() {
+  if (chatReconnectTimer) {
+    clearTimeout(chatReconnectTimer);
+    chatReconnectTimer = null;
+  }
+
   // Unsubscribe from previous
   if (chatSubscription) {
     sb.removeChannel(chatSubscription);
@@ -297,9 +304,18 @@ function subscribeToChat() {
     )
     .subscribe((status) => {
       if (status === 'CHANNEL_ERROR') {
-        console.error('Chat subscription error - retrying...');
-        setTimeout(() => subscribeToChat(), 3000);
+        chatReconnectAttempts += 1;
+        const retryDelay = Math.min(30000, 3000 * Math.pow(2, chatReconnectAttempts - 1));
+        console.error('Chat subscription error - retrying in', retryDelay, 'ms');
+
+        if (!chatReconnectTimer) {
+          chatReconnectTimer = setTimeout(() => {
+            chatReconnectTimer = null;
+            subscribeToChat();
+          }, retryDelay);
+        }
       } else if (status === 'SUBSCRIBED') {
+        chatReconnectAttempts = 0;
         console.log('Chat subscription active');
       }
     });
