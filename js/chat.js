@@ -112,11 +112,17 @@ async function selectCommunity(communityId, communityName) {
   currentSection = null;
 
   // Show sections sidebar
-  document.getElementById('communities-list').parentElement.style.display = 'none';
-  document.getElementById('sections-sidebar').style.display = 'flex';
-  document.getElementById('members-sidebar').style.display = 'flex';
-  document.getElementById('chat-empty').style.display = 'flex';
-  document.getElementById('chat-main').style.display = 'none';
+  const communitiesSidebar = document.getElementById('communities-list').parentElement;
+  const sectionsSidebar = document.getElementById('sections-sidebar');
+  const membersSidebar = document.getElementById('members-sidebar');
+  const chatEmpty = document.getElementById('chat-empty');
+  const chatMain = document.getElementById('chat-main');
+
+  communitiesSidebar.style.display = 'none';
+  sectionsSidebar.style.display = 'flex';
+  membersSidebar.style.display = window.innerWidth > 768 ? 'flex' : 'none'; // Hide members on mobile
+  chatEmpty.style.display = 'flex';
+  chatMain.style.display = 'none';
   
   // Update community title
   document.getElementById('community-title').textContent = communityName;
@@ -562,6 +568,11 @@ function goBackToCommunities() {
   document.getElementById('members-sidebar').style.display = 'none';
   document.getElementById('chat-main').style.display = 'none';
   document.getElementById('chat-empty').style.display = 'flex';
+
+  // Scroll to top on mobile
+  if (window.innerWidth <= 768) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 // ---- Go back to sections --------------------------------------
@@ -580,6 +591,11 @@ function goBackToSections() {
 
   document.getElementById('chat-main').style.display = 'none';
   document.getElementById('chat-empty').style.display = 'flex';
+
+  // Scroll to top on mobile
+  if (window.innerWidth <= 768) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 // ---- Create Community Modal ===================================
