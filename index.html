@@ -1,774 +1,1051 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Campuz — Login</title>
+  <title>Campuz</title>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-  <!-- Supabase CDN -->
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- GSAP -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <!-- Three.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg:       #0a0b0f;
-      --surface:  #111318;
-      --border:   #1e2028;
-      --accent:   #6c63ff;
-      --accent2:  #ff6584;
-      --text:     #e8eaf0;
-      --muted:    #6b7280;
-      --radius:   16px;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow-y: auto;
-      overflow-x: hidden;
-      padding: 1rem 0;
-    }
-
-    /* Three.js canvas behind everything */
-    #bg-canvas {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-    }
-
-    .auth-wrapper {
-      position: relative;
-      z-index: 10;
-      width: 100%;
-      max-width: 420px;
-      padding: 2rem 1.5rem;
-      margin: auto;
-    }
-
-    .brand {
-      text-align: cent;
-      margin-bottom: 2.5rem;
-    }
-
-    .brand h1 {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 3rem;
-      letter-spacing: -1px;
-      background: linear-gradient(135deg, #6c63ff, #ff6584);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .brand p {
-      color: var(--muted);
-      font-size: 0.9rem;
-      margin-top: 0.4rem;
-    }
-
-    .card {
-      background: rgba(17, 19, 24, 0.85);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 2rem;
-      backdrop-filter: blur(20px);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    }
-
-    .tabs {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-      background: var(--bg);
-      border-radius: 10px;
-      padding: 4px;
-    }
-
-    .tab-btn {
-      flex: 1;
-      padding: 0.6rem;
-      border: none;
-      border-radius: 8px;
-      background: transparent;
-      color: var(--muted);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .tab-btn.active {
-      background: var(--accent);
-      color: #fff;
-    }
-
-    .form-group {
-      margin-bottom: 1.2rem;
-    }
-
-    label {
-      display: block;
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-bottom: 0.4rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    input {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    input:focus { border-color: var(--accent); }
-    input::placeholder { color: #3a3d47; }
-
-    .password-wrapper {
-      position: relative;
-    }
-
-    .password-wrapper input {
-      padding-right: 2.5rem;
-    }
-
-    .password-toggle {
-      position: absolute;
-      right: 0.75rem;
-      top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer;
-      color: var(--muted);
-      font-size: 1.1rem;
-      user-select: none;
-      transition: color 0.2s;
-    }
-
-    .password-toggle:hover {
-      color: var(--text);
-    }
-
-    .password-strength {
-      margin-top: 0.5rem;
-      display: none;
-    }
-
-    .strength-bar {
-      height: 4px;
-      background: var(--border);
-      border-radius: 2px;
-      overflow: hidden;
-      margin-bottom: 0.4rem;
-    }
-
-    .strength-fill {
-      height: 100%;
-      width: 0%;
-      transition: all 0.3s ease;
-      border-radius: 2px;
-    }
-
-    .strength-fill.weak {
-      width: 33%;
-      background: #ff6584;
-    }
-
-    .strength-fill.medium {
-      width: 66%;
-      background: #ffa500;
-    }
-
-    .strength-fill.strong {
-      width: 100%;
-      background: #3ecf8e;
-    }
-
-    .strength-text {
-      font-size: 0.75rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    .strength-indicator {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-
-    .strength-indicator.weak {
-      background: #ff6584;
-      box-shadow: 0 0 8px #ff6584;
-    }
-
-    .strength-indicator.medium {
-      background: #ffa500;
-      box-shadow: 0 0 8px #ffa500;
-    }
-
-    .strength-indicator.strong {
-      background: #3ecf8e;
-      box-shadow: 0 0 8px #3ecf8e;
-    }
-
-    .strength-text span {
-      color: var(--muted);
-    }
-
-    .strength-text.weak span {
-      color: #ff6584;
-    }
-
-    .strength-text.medium span {
-      color: #ffa500;
-    }
-
-    .strength-text.strong span {
-      color: #3ecf8e;
-    }
-
-    .password-requirements {
-      font-size: 0.7rem;
-      color: var(--muted);
-      margin-top: 0.4rem;
-      line-height: 1.4;
-    }
-
-    .password-requirements ul {
-      list-style: none;
-      padding: 0;
-      margin: 0.3rem 0 0 0;
-    }
-
-    .password-requirements li {
-      padding: 0.15rem 0;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-
-    .password-requirements li::before {
-      content: '○';
-      color: var(--border);
-    }
-
-    .password-requirements li.valid::before {
-      content: '✓';
-      color: #3ecf8e;
-    }
-
-    .btn-primary {
-      width: 100%;
-      padding: 0.85rem;
-      background: linear-gradient(135deg, var(--accent), #a855f7);
-      border: none;
-      border-radius: 10px;
-      color: #fff;
-      font-family: 'Syne', sans-serif;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 0.5rem;
-      transition: opacity 0.2s, transform 0.1s;
-      letter-spacing: 0.3px;
-    }
-
-    .btn-primary:hover { opacity: 0.9; }
-    .btn-primary:active { transform: scale(0.98); }
-
-    .error-msg {
-      background: rgba(255, 101, 132, 0.1);
-      border: 1px solid rgba(255, 101, 132, 0.3);
-      border-radius: 8px;
-      padding: 0.7rem 1rem;
-      font-size: 0.85rem;
-      color: var(--accent2);
-      margin-top: 1rem;
-      display: none;
-    }
-
-    .error-msg.success {
-      background: rgba(62, 207, 142, 0.1);
-      border-color: rgba(62, 207, 142, 0.3);
-      color: #3ecf8e;
-    }
-
-    .panel { display: none; }
-    .panel.active { display: block; }
-
-    /* ===== RESPONSIVE STYLES ===== */
-    
-    /* Tablets and smaller */
-    @media (max-width: 768px) {
-      .auth-wrapper {
-        max-width: 90%;
-        padding: 1.5rem 1rem;
-      }
-
-      .brand h1 {
-        font-size: 2.5rem;
-      }
-
-      .card {
-        padding: 1.5rem;
-      }
-
-      input, .btn-primary {
-        font-size: 1rem;
-        padding: 0.8rem 1rem;
-      }
-
-      .form-group {
-        margin-bottom: 1rem;
-      }
-    }
-
-    /* Small phones */
-    @media (max-width: 480px) {
-      .auth-wrapper {
-        max-width: 95%;
-        padding: 1rem 0.75rem;
-      }
-
-      .brand {
-        margin-bottom: 1.5rem;
-      }
-
-      .brand h1 {
-        font-size: 2rem;
-      }
-
-      .brand p {
-        font-size: 0.85rem;
-      }
-
-      .card {
-        padding: 1.25rem;
-      }
-
-      .tabs {
-        margin-bottom: 1.2rem;
-      }
-
-      .tab-btn {
-        padding: 0.55rem;
-        font-size: 0.85rem;
-      }
-
-      label {
-        font-size: 0.75rem;
-      }
-
-      input, .btn-primary {
-        padding: 0.75rem 0.9rem;
-        font-size: 0.95rem;
-      }
-
-      .password-toggle {
-        right: 0.6rem;
-        font-size: 1rem;
-      }
-
-      .error-msg {
-        font-size: 0.8rem;
-        padding: 0.6rem 0.85rem;
-      }
-    }
-
-    /* Short screens (height-based) */
-    @media (max-height: 800px) {
-      body {
-        align-items: flex-start;
-        padding: 1.5rem 0;
-      }
-
-      .brand {
-        margin-bottom: 1.5rem;
-      }
-
-      .brand h1 {
-        font-size: 2.5rem;
-      }
-
-      .card {
-        padding: 1.5rem;
-      }
-
-      .form-group {
-        margin-bottom: 0.9rem;
-      }
-
-      .tabs {
-        margin-bottom: 1.2rem;
-      }
-    }
-
-    /* Landscape phones or very short screens */
-    @media (max-height: 650px) {
-      body {
-        padding: 1rem 0;
-      }
-
-      .auth-wrapper {
-        padding: 1rem 1.5rem;
-      }
-
-      .brand {
-        margin-bottom: 1rem;
-      }
-
-      .brand h1 {
-        font-size: 2rem;
-      }
-
-      .card {
-        padding: 1.25rem;
-      }
-
-      .form-group {
-        margin-bottom: 0.75rem;
-      }
-
-      .tabs {
-        margin-bottom: 1rem;
-      }
-
-      input, .btn-primary {
-        padding: 0.7rem 0.9rem;
-      }
-    }
-
-    /* Large desktops */
-    @media (min-width: 1440px) {
-      .auth-wrapper {
-        max-width: 480px;
-      }
-
-      .brand h1 {
-        font-size: 3.5rem;
-      }
-
-      .card {
-        padding: 2.5rem;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="css/app.css"/>
 </head>
 <body>
 
-<canvas id="bg-canvas"></canvas>
+<!-- Mobile overlay when sidebar open -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
-<div class="auth-wrapper" id="auth-wrapper">
-  <div class="brand">
-    <h1>Campuz</h1>
-    <p>Your classroom. Amplified.</p>
-  </div>
+<div class="app-container">
 
-  <div class="card">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('login')">Login</button>
-      <button class="tab-btn" onclick="switchTab('signup')">Sign Up</button>
+  <!-- ===== SIDEBAR ===== -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">Campuz</div>
+
+    <div class="nav-item active" id="nav-home" onclick="navigateAndCloseSidebar('home')">
+      <span class="nav-icon">🏠</span> Home
+    </div>
+    <div class="nav-item" id="nav-chat" onclick="navigateAndCloseSidebar('chat')">
+      <span class="nav-icon">💬</span> Class Chat
+    </div>
+    <div class="nav-item" id="nav-profile" onclick="navigateAndCloseSidebar('profile')">
+      <span class="nav-icon">👤</span> Profile
     </div>
 
-    <!-- LOGIN PANEL -->
-    <div class="panel active" id="panel-login">
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" id="login-email" placeholder="student@college.edu"/>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar" id="sidebar-avatar">?</div>
+        <span class="user-name" id="sidebar-name">Loading…</span>
+        <button class="logout-btn" onclick="handleLogout()" title="Logout">⎋</button>
       </div>
-      <div class="form-group">
-        <label>Password</label>
-        <div class="password-wrapper">
-          <input type="password" id="login-pass" placeholder="••••••••"/>
-          <span class="password-toggle" onclick="togglePassword('login-pass', this)">👁️</span>
-        </div>
-      </div>
-      <button class="btn-primary" onclick="handleLogin()">Enter Campuz →</button>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="main-content">
+
+    <!-- Top bar -->
+    <div class="top-bar">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <div class="page-title" id="page-title">Home Feed</div>
+      <div style="width:32px"></div><!-- spacer -->
     </div>
 
-    <!-- SIGNUP PANEL -->
-    <div class="panel" id="panel-signup">
-      <div class="form-group">
-        <label>Full Name</label>
-        <input type="text" id="signup-name" placeholder="Alex Chen"/>
-      </div>
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" id="signup-email" placeholder="student@college.edu"/>
-      </div>
-      <div class="form-group">
-        <label>Password</label>
-        <div class="password-wrapper">
-          <input type="password" id="signup-pass" placeholder="Min 6 characters" oninput="checkPasswordStrength(this.value)"/>
-          <span class="password-toggle" onclick="togglePassword('signup-pass', this)">👁️</span>
+    <!-- ===== HOME / FEED ===== -->
+    <div class="section active" id="section-home">
+
+      <!-- Create post -->
+      <div class="create-card">
+        <p class="section-heading">Share something</p>
+        <textarea id="post-textarea" placeholder="What's on your mind…" rows="3"></textarea>
+        <div class="create-actions">
+          <button class="btn-primary" onclick="createPost(currentUser)">Post →</button>
+          <label class="anon-toggle" title="Post anonymously">
+            <input type="checkbox" id="post-anon"/>
+            <div class="toggle-track"></div>
+            Post Anonymously
+          </label>
         </div>
-        <div class="password-strength" id="password-strength">
-          <div class="strength-bar">
-            <div class="strength-fill" id="strength-fill"></div>
+      </div>
+
+      <!-- Posts feed -->
+      <p class="section-heading">Recent Posts</p>
+      <div id="posts-list">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+    <!-- ===== CHAT (Community-based like WhatsApp) ===== -->
+    <div class="section" id="section-chat">
+      <!-- Communities Sidebar -->
+      <div class="chat-sidebar">
+        <div class="chat-sidebar-header">
+          <h3>🏘️ Communities</h3>
+          <button class="add-community-btn" onclick="showCreateCommunityModal()" title="Create community">+</button>
+        </div>
+        <div class="communities-list" id="communities-list">
+          <div class="loading-text">Loading communities...</div>
+        </div>
+      </div>
+
+      <!-- Sections Sidebar -->
+      <div class="sections-sidebar" id="sections-sidebar" style="display:none;">
+        <div class="sections-header">
+          <button class="back-btn" onclick="goBackToCommunities()">← Back</button>
+          <h3 id="community-title">Community</h3>
+          <button class="join-leave-btn" id="join-leave-btn" onclick="toggleCommunityMembership()" title="Join/Leave">👋</button>
+        </div>
+        <div class="members-info">
+          <div class="member-count" id="member-count">👥 0 members</div>
+        </div>
+        <div class="sections-list" id="sections-list">
+          <div class="loading-text">Loading sections...</div>
+        </div>
+      </div>
+
+      <!-- Members Sidebar -->
+      <div class="members-sidebar" id="members-sidebar" style="display:none;">
+        <div class="members-header">
+          <h3>👥 Members</h3>
+          <span class="member-count-badge" id="member-count-badge">0</span>
+        </div>
+        <div class="members-list" id="members-list">
+          <div class="loading-text">Loading members...</div>
+        </div>
+      </div>
+
+      <!-- Main Chat Area -->
+      <div class="chat-main" id="chat-main" style="display:none;">
+        <!-- Section Header -->
+        <div class="chat-header">
+          <div class="section-info">
+            <button class="back-btn" onclick="goBackToSections()">← Back</button>
+            <div>
+              <h2 id="section-title">Select a section</h2>
+              <p id="section-desc">Community > Section</p>
+            </div>
           </div>
-          <div class="strength-text" id="strength-text">
-            <span class="strength-indicator"></span>
-            <span>Password strength</span>
+          <div class="chat-header-actions">
+            <div class="view-toggle">
+              <button class="toggle-btn active" id="messages-tab" onclick="switchChatView('messages')">💬 Messages</button>
+              <button class="toggle-btn" id="polls-tab" onclick="switchChatView('polls')">📊 Polls</button>
+            </div>
+            <button class="chat-search-btn" onclick="toggleChatSearch()" title="Search">🔍</button>
           </div>
         </div>
-        <div class="password-requirements">
-          <ul id="password-rules">
-            <li id="rule-length">At least 6 characters</li>
-            <li id="rule-letter">Contains letters</li>
-            <li id="rule-number">Contains numbers</li>
-            <li id="rule-special">Contains special character (!@#$%^&*)</li>
-          </ul>
+
+        <!-- Chat Search (Hidden by default) -->
+        <div class="chat-search-area" id="chat-search-area" style="display:none;">
+          <input type="text" id="chat-search-input" placeholder="Search messages…" />
+          <button class="search-close-btn" onclick="toggleChatSearch()">✕</button>
+        </div>
+
+        <!-- Messages View -->
+        <div id="messages-view" class="chat-view-content">
+          <!-- Messages Area -->
+          <div class="chat-messages" id="chat-messages">
+            <div class="spinner"></div>
+          </div>
+
+          <!-- Typing Indicator -->
+          <div class="typing-indicator" id="typing-indicator" style="display:none;">
+            <div class="typing-item">
+              <span id="typing-user">Someone</span> is typing
+              <span class="typing-dots">
+                <span></span><span></span><span></span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Chat Input Area -->
+          <div class="chat-input-area">
+            <div class="input-wrapper">
+              <input type="text" id="chat-input" placeholder="Type a message here…"
+                     onkeydown="handleChatKeydown(event)"
+                     oninput="notifyTyping()"/>
+              <button class="emoji-btn" onclick="showEmojiPicker()" title="Add emoji">😊</button>
+            </div>
+            <button class="send-btn" onclick="sendMessage()" title="Send message">➤</button>
+          </div>
+        </div>
+
+        <!-- Polls View -->
+        <div id="polls-view" class="chat-view-content" style="display:none;">
+          <div class="polls-container" id="polls-container">
+            <div class="spinner"></div>
+          </div>
+          <button class="create-poll-btn" onclick="showCreatePollModal()">➕ Create Poll</button>
         </div>
       </div>
-      <div class="form-group">
-        <label>Retype Password</label>
-        <div class="password-wrapper">
-          <input type="password" id="signup-pass-confirm" placeholder="Confirm your password"/>
-          <span class="password-toggle" onclick="togglePassword('signup-pass-confirm', this)">👁️</span>
+
+      <!-- Empty State -->
+      <div class="chat-empty" id="chat-empty">
+        <div class="empty-state">
+          <div class="icon">💬</div>
+          <h2>Select a Community</h2>
+          <p>Choose a community from the list to get started</p>
         </div>
       </div>
-      <button class="btn-primary" onclick="handleSignup()">Join Campuz →</button>
     </div>
 
-    <div class="error-msg" id="error-msg"></div>
-  </div>
-</div>
+    <!-- Create Community Modal -->
+    <div class="modal-overlay" id="create-community-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Create Community</h3>
+          <button class="modal-close" onclick="closeModal('create-community-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <label class="input-label">Community Name</label>
+          <input type="text" id="community-name-input" class="modal-input" placeholder="e.g., 1st Year CSE" />
+          
+          <label class="input-label">Description</label>
+          <textarea id="community-desc-input" class="modal-input" placeholder="Describe your community..." rows="3"></textarea>
+          
+          <div id="create-community-error" class="error-msg" style="display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeModal('create-community-modal')">Cancel</button>
+          <button class="btn-primary" onclick="createCommunity()">Create</button>
+        </div>
+      </div>
+    </div>
 
+    <!-- Add Section Modal -->
+    <div class="modal-overlay" id="add-section-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Add Section</h3>
+          <button class="modal-close" onclick="closeModal('add-section-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <label class="input-label">Section Name</label>
+          <input type="text" id="section-name-input" class="modal-input" placeholder="e.g., Section-1" />
+          
+          <label class="input-label">Description</label>
+          <textarea id="section-desc-input" class="modal-input" placeholder="Describe this section..." rows="3"></textarea>
+          
+          <div id="add-section-error" class="error-msg" style="display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeModal('add-section-modal')">Cancel</button>
+          <button class="btn-primary" onclick="addSection()">Add Section</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Poll Modal (for chat sections) -->
+    <div class="modal-overlay" id="create-poll-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>📊 Create Poll</h3>
+          <button class="modal-close" onclick="closeModal('create-poll-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <label class="input-label">Question</label>
+          <input type="text" id="poll-question-input" class="modal-input" placeholder="What's your question?" maxlength="200" />
+          
+          <label class="input-label">Option A</label>
+          <input type="text" id="poll-option-a-input" class="modal-input" placeholder="First option" maxlength="100" />
+          
+          <label class="input-label">Option B</label>
+          <input type="text" id="poll-option-b-input" class="modal-input" placeholder="Second option" maxlength="100" />
+          
+          <label class="input-label">Option C</label>
+          <input type="text" id="poll-option-c-input" class="modal-input" placeholder="Third option" maxlength="100" />
+          
+          <label class="input-label">Option D</label>
+          <input type="text" id="poll-option-d-input" class="modal-input" placeholder="Fourth option" maxlength="100" />
+          
+          <div id="create-poll-error" class="error-msg" style="display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeModal('create-poll-modal')">Cancel</button>
+          <button class="btn-primary" onclick="createSectionPoll()">Create Poll</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== POLLS ===== -->
+    <div class="section" id="section-polls">
+
+      <!-- Create poll -->
+      <div class="create-card" style="margin-bottom:1.25rem">
+        <p class="section-heading">Create a Poll</p>
+        <div class="poll-inputs">
+          <input type="text" id="poll-question" placeholder="Ask a question…"/>
+          <input type="text" id="poll-opt-a" placeholder="Option A"/>
+          <input type="text" id="poll-opt-b" placeholder="Option B"/>
+          <input type="text" id="poll-opt-c" placeholder="Option C"/>
+        </div>
+        <button class="btn-primary" onclick="createPoll(currentUser)">Launch Poll →</button>
+      </div>
+
+      <p class="section-heading">Active Polls</p>
+      <div id="polls-list">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+    <!-- ===== PROFILE ===== -->
+    <div class="section" id="section-profile">
+      <div class="profile-hero">
+        <!-- Profile Photo with Upload -->
+        <div class="profile-avatar-wrapper">
+          <div class="profile-avatar" id="profile-avatar">
+            <img id="profile-avatar-img" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;" />
+            <span id="profile-avatar-initials">?</span>
+          </div>
+          <button class="avatar-upload-btn" onclick="document.getElementById('avatar-upload-input').click()" title="Change profile photo">
+            📷
+          </button>
+          <input type="file" id="avatar-upload-input" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)" />
+        </div>
+
+        <div class="profile-name" id="profile-name">Loading…</div>
+        <div class="profile-email" id="profile-email"></div>
+
+        <!-- Profile Actions -->
+        <div class="profile-actions">
+          <button class="btn-profile-action" onclick="showEditProfileModal()">
+            ✏️ Edit Profile
+          </button>
+          <button class="btn-profile-action" onclick="handleLogout()">
+            🚪 Logout
+          </button>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-box">
+            <div class="stat-num" id="stat-posts">—</div>
+            <div class="stat-label">Posts</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" id="stat-comments">—</div>
+            <div class="stat-label">Comments</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" id="stat-polls">—</div>
+            <div class="stat-label">Polls</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Settings Card -->
+      <div class="card">
+        <p class="section-heading" style="margin-top:0">Settings</p>
+        <div class="profile-settings-list">
+          <div class="setting-item" onclick="showChangeNameModal()">
+            <span class="setting-icon">👤</span>
+            <div class="setting-info">
+              <div class="setting-title">Change Display Name</div>
+              <div class="setting-desc">Update your public display name</div>
+            </div>
+            <span class="setting-arrow">›</span>
+          </div>
+          <div class="setting-item" onclick="showChangePasswordModal()">
+            <span class="setting-icon">🔒</span>
+            <div class="setting-info">
+              <div class="setting-title">Change Password</div>
+              <div class="setting-desc">Update your account password</div>
+            </div>
+            <span class="setting-arrow">›</span>
+          </div>
+          <div class="setting-item" onclick="showAboutModal()">
+            <span class="setting-icon">ℹ️</span>
+            <div class="setting-info">
+              <div class="setting-title">About Campuz</div>
+              <div class="setting-desc">App version and information</div>
+            </div>
+            <span class="setting-arrow">›</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal-overlay" id="edit-profile-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Edit Profile</h3>
+          <button class="modal-close" onclick="closeModal('edit-profile-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <label class="input-label">Display Name</label>
+          <input type="text" id="edit-name-input" class="modal-input" placeholder="Enter your name" />
+          
+          <div id="edit-profile-error" class="error-msg" style="display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeModal('edit-profile-modal')">Cancel</button>
+          <button class="btn-primary" onclick="saveProfileName()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal-overlay" id="change-password-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Change Password</h3>
+          <button class="modal-close" onclick="closeModal('change-password-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <label class="input-label">New Password</label>
+          <input type="password" id="new-password-input" class="modal-input" placeholder="Enter new password" />
+          
+          <label class="input-label">Confirm New Password</label>
+          <input type="password" id="confirm-password-input" class="modal-input" placeholder="Confirm new password" />
+          
+          <div id="change-password-error" class="error-msg" style="display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeModal('change-password-modal')">Cancel</button>
+          <button class="btn-primary" onclick="saveNewPassword()">Update Password</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- About Modal -->
+    <div class="modal-overlay" id="about-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>About Campuz</h3>
+          <button class="modal-close" onclick="closeModal('about-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div style="text-align:center; padding:1rem 0;">
+            <div style="font-size:3rem; margin-bottom:0.5rem;">🎓</div>
+            <h2 style="font-family:'Syne', sans-serif; margin:0.5rem 0;">Campuz</h2>
+            <p style="color:var(--muted); font-size:0.9rem;">Version 1.0.0</p>
+            <p style="margin-top:1.5rem; line-height:1.6;">
+              Your modern college social hub.<br>
+              Connect, share, and engage with your classmates.
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-primary" onclick="closeModal('about-modal')">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modern Alert Modal -->
+    <div class="modern-modal-overlay" id="modern-alert-modal">
+      <div class="modern-modal-box alert-modal">
+        <div class="modern-modal-icon" id="alert-icon">ℹ️</div>
+        <div class="modern-modal-message" id="alert-message"></div>
+        <button class="modern-btn modern-btn-primary" onclick="closeModernAlert()">OK</button>
+      </div>
+    </div>
+
+    <!-- Modern Confirm Modal -->
+    <div class="modern-modal-overlay" id="modern-confirm-modal">
+      <div class="modern-modal-box confirm-modal">
+        <div class="modern-modal-icon">⚠️</div>
+        <div class="modern-modal-message" id="confirm-message"></div>
+        <div class="modern-modal-buttons">
+          <button class="modern-btn modern-btn-secondary" onclick="closeModernConfirm(false)">Cancel</button>
+          <button class="modern-btn modern-btn-danger" id="confirm-btn-text" onclick="closeModernConfirm(true)">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modern Voters List Modal -->
+    <div class="modern-modal-overlay" id="voters-modal">
+      <div class="modern-modal-box voters-modal">
+        <div class="modern-modal-header">
+          <h3 id="voters-title">Voters</h3>
+          <button class="modal-close-x" onclick="closeVotersModal()">✕</button>
+        </div>
+        <div class="voters-list" id="voters-list"></div>
+        <button class="modern-btn modern-btn-primary" onclick="closeVotersModal()">Close</button>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /app-container -->
+
+<!-- Scripts -->
 <script src="js/supabase.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/polls-chat.js"></script>
+<script src="js/polls.js"></script>
 <script>
-  // ---- Three.js Particle Background ----
-  (function initParticles() {
-    const canvas = document.getElementById('bg-canvas');
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// ============================================================
+//  APP BOOTSTRAP
+// ============================================================
+let currentUser = null;
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.z = 5;
+// ---- Prevent mobile pull-to-refresh --------------------------
+(function preventPullToRefresh() {
+  let touchStartY = 0;
 
-    // Create star field particles
-    const count = 800;
-    const positions = new Float32Array(count * 3);
-    for (let i = 0; i < count * 3; i++) {
-      positions[i] = (Math.random() - 0.5) * 20;
+  document.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (e.touches.length !== 1) return;
+    const currentY = e.touches[0].clientY;
+    const pullingDown = currentY > touchStartY + 8;
+    const scrollTop = (document.scrollingElement || document.documentElement).scrollTop;
+
+    if (pullingDown && scrollTop <= 0) {
+      e.preventDefault();
     }
+  }, { passive: false });
+})();
 
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-    const mat = new THREE.PointsMaterial({
-      color: 0x6c63ff,
-      size: 0.04,
-      transparent: true,
-      opacity: 0.6
-    });
-
-    const points = new THREE.Points(geo, mat);
-    scene.add(points);
-
-    // Animate
-    function animate() {
-      requestAnimationFrame(animate);
-      points.rotation.y += 0.0005;
-      points.rotation.x += 0.0002;
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    window.addEventListener('resize', () => {
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-    });
-  })();
-
-  // ---- GSAP Entry Animation ----
-  gsap.from('#auth-wrapper', {
-    duration: 1,
-    y: 40,
-    opacity: 0,
-    ease: 'power3.out'
-  });
-
-  // ---- Tab Switch ----
-  function switchTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach((b, i) => {
-      b.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'signup'));
-    });
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel-' + tab).classList.add('active');
-    showError('');
+(async function boot() {
+  // Auth guard — redirect to login if not signed in
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    window.location.href = 'login.html';
+    return;
   }
 
-  function showError(msg, isSuccess = false) {
-    const el = document.getElementById('error-msg');
-    el.textContent = msg;
-    el.style.display = msg ? 'block' : 'none';
-    if (isSuccess) {
-      el.classList.add('success');
-    } else {
-      el.classList.remove('success');
-    }
+  // Load user profile
+  currentUser = await getCurrentUser();
+  if (!currentUser) {
+    await sb.auth.signOut();
+    window.location.href = 'login.html?reason=account_missing';
+    return;
   }
 
-  // ---- Toggle password visibility ----
-  function togglePassword(inputId, icon) {
-    const input = document.getElementById(inputId);
-    if (input.type === 'password') {
-      input.type = 'text';
-      icon.textContent = '👁️‍🗨️';
-    } else {
-      input.type = 'password';
-      icon.textContent = '👁️';
-    }
+  // Populate sidebar & profile
+  populateUserUI();
+
+  // Load initial section
+  loadPosts(currentUser);
+
+  // GSAP entrance
+  gsap.from('.sidebar', { duration: 0.5, x: -30, opacity: 0, ease: 'power2.out' });
+  gsap.from('.top-bar', { duration: 0.4, y: -20, opacity: 0, ease: 'power2.out', delay: 0.1 });
+  gsap.from('.section.active', { duration: 0.5, y: 20, opacity: 0, ease: 'power2.out', delay: 0.2 });
+})();
+
+// ---- Populate sidebar & profile with user data ---------------
+function populateUserUI() {
+  const initials = currentUser.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+  // Sidebar
+  document.getElementById('sidebar-avatar').textContent = initials;
+  document.getElementById('sidebar-name').textContent   = currentUser.name;
+
+  // Profile section - show avatar if exists, otherwise show initials
+  const avatarImg = document.getElementById('profile-avatar-img');
+  const avatarInitials = document.getElementById('profile-avatar-initials');
+  
+  if (currentUser.avatar_url) {
+    avatarImg.src = currentUser.avatar_url;
+    avatarImg.style.display = 'block';
+    avatarInitials.style.display = 'none';
+  } else {
+    avatarImg.style.display = 'none';
+    avatarInitials.style.display = 'flex';
+    avatarInitials.textContent = initials;
   }
 
-  // ---- Password strength checker ----
-  function checkPasswordStrength(password) {
-    const strengthDiv = document.getElementById('password-strength');
-    const strengthFill = document.getElementById('strength-fill');
-    const strengthText = document.getElementById('strength-text');
+  document.getElementById('profile-name').textContent   = currentUser.name;
+  document.getElementById('profile-email').textContent  = currentUser.email;
+
+  loadProfileStats();
+}
+
+// ---- Profile stats (cached) -------------------------------------------
+let profileStatCache = { posts: 0, comments: 0, polls: 0, timestamp: 0 };
+
+async function loadProfileStats() {
+  const now = Date.now();
+  // Cache stats for 30 seconds
+  if (now - profileStatCache.timestamp < 30000 && profileStatCache.timestamp > 0) {
+    document.getElementById('stat-posts').textContent    = profileStatCache.posts;
+    document.getElementById('stat-comments').textContent = profileStatCache.comments;
+    document.getElementById('stat-polls').textContent    = profileStatCache.polls;
+    return;
+  }
+
+  try {
+    const [postsRes, commentsRes, pollsRes] = await Promise.all([
+      sb.from('posts').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id),
+      sb.from('comments').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id),
+      sb.from('polls').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id)
+    ]);
+
+    profileStatCache = {
+      posts: postsRes.count ?? 0,
+      comments: commentsRes.count ?? 0,
+      polls: pollsRes.count ?? 0,
+      timestamp: now
+    };
+
+    document.getElementById('stat-posts').textContent    = profileStatCache.posts;
+    document.getElementById('stat-comments').textContent = profileStatCache.comments;
+    document.getElementById('stat-polls').textContent    = profileStatCache.polls;
+  } catch (error) {
+    console.error('Failed to load profile stats:', error);
+  }
+}
+
+// ---- Section navigation --------------------------------------
+const sectionTitles = {
+  home:    'Home Feed',
+  chat:    'Class Chat',
+  polls:   'Polls',
+  profile: 'My Profile'
+};
+
+let chatInitialized = false;
+
+function switchSection(name) {
+  // Update nav items
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-' + name).classList.add('active');
+
+  // Update page title
+  document.getElementById('page-title').textContent = sectionTitles[name];
+
+  // Hide all sections, show target
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  const target = document.getElementById('section-' + name);
+  target.classList.add('active');
+
+  // Lazy-init chat once
+  if (name === 'chat' && !chatInitialized) {
+    chatInitialized = true;
+    initChat(currentUser);
+  }
+
+  // Reload polls each time user opens section
+  if (name === 'polls') loadPolls(currentUser);
+
+  closeSidebar();
+}
+
+// ---- Logout --------------------------------------------------
+async function handleLogout() {
+  await sb.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+// ---- Mobile sidebar ------------------------------------------
+function toggleSidebar() {
+  const sidebar  = document.getElementById('sidebar');
+  const overlay  = document.getElementById('sidebar-overlay');
+  
+  console.log('🔍 Toggle sidebar clicked');
+  console.log('Sidebar element:', sidebar);
+  console.log('Sidebar computed styles:', sidebar ? window.getComputedStyle(sidebar).transform : 'N/A');
+  
+  if (!sidebar || !overlay) {
+    console.error('❌ Sidebar or overlay not found!');
+    return;
+  }
+  
+  const isOpen = sidebar.classList.contains('open');
+  console.log('Currently open?', isOpen);
+  
+  if (isOpen) {
+    console.log('Closing sidebar...');
+    closeSidebar();
+  } else {
+    console.log('Opening sidebar...');
+    sidebar.classList.add('open');
+    overlay.classList.add('show');
+    console.log('Sidebar classes after open:', sidebar.className);
+    console.log('Transform after open:', window.getComputedStyle(sidebar).transform);
+  }
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('show');
+}
+
+// Auto-close sidebar when navigating (for mobile/any device)
+function navigateAndCloseSidebar(sectionId) {
+  switchSection(sectionId);
+  closeSidebar();
+}
+
+// Close sidebar with Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar && sidebar.classList.contains('open')) {
+      closeSidebar();
+    }
+  }
+});
+
+// ---- Profile Photo Upload ------------------------------------
+async function handleAvatarUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    showModernAlert('Please select an image file', '⚠️');
+    return;
+  }
+
+  // Validate file size (max 2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    showModernAlert('Image size must be less than 2MB', '⚠️');
+    return;
+  }
+
+  try {
+    // Show loading state
+    const avatarImg = document.getElementById('profile-avatar-img');
+    const avatarInitials = document.getElementById('profile-avatar-initials');
+    avatarInitials.textContent = '⏳';
+    avatarInitials.style.display = 'flex';
+    avatarImg.style.display = 'none';
+
+    // Generate unique filename
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`;
+    const filePath = `avatars/${fileName}`;
+
+    // Upload to Supabase Storage
+    const { data, error: uploadError } = await sb.storage
+      .from('campuz-avatars')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    // Get public URL
+    const { data: urlData } = sb.storage
+      .from('campuz-avatars')
+      .getPublicUrl(filePath);
+
+    const publicUrl = urlData.publicUrl;
+
+    // Update user record in database
+    const { error: updateError } = await sb
+      .from('users')
+      .update({ avatar_url: publicUrl })
+      .eq('id', currentUser.id);
+
+    if (updateError) throw updateError;
+
+    // Update local user object and UI
+    currentUser.avatar_url = publicUrl;
+    avatarImg.src = publicUrl;
+    avatarImg.style.display = 'block';
+    avatarInitials.style.display = 'none';
+
+    // Show success message
+    showToast('Profile photo updated successfully! 🎉');
+
+  } catch (error) {
+    console.error('Avatar upload failed:', error);
     
-    // Show strength meter if password is not empty
-    strengthDiv.style.display = password.length > 0 ? 'block' : 'none';
-    
-    if (password.length === 0) return;
-
-    // Check rules
-    const hasLength = password.length >= 6;
-    const hasLetter = /[a-zA-Z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
-
-    // Update rule indicators
-    document.getElementById('rule-length').classList.toggle('valid', hasLength);
-    document.getElementById('rule-letter').classList.toggle('valid', hasLetter);
-    document.getElementById('rule-number').classList.toggle('valid', hasNumber);
-    document.getElementById('rule-special').classList.toggle('valid', hasSpecial);
-
-    // Calculate strength
-    let strength = 0;
-    if (hasLength) strength++;
-    if (hasLetter) strength++;
-    if (hasNumber) strength++;
-    if (hasSpecial) strength++;
-
-    // Update UI based on strength
-    strengthFill.className = 'strength-fill';
-    strengthText.className = 'strength-text';
-    const indicator = strengthText.querySelector('.strength-indicator');
-    indicator.className = 'strength-indicator';
-
-    if (strength <= 2) {
-      strengthFill.classList.add('weak');
-      strengthText.classList.add('weak');
-      indicator.classList.add('weak');
-      strengthText.querySelector('span:last-child').textContent = 'Weak password';
-    } else if (strength === 3) {
-      strengthFill.classList.add('medium');
-      strengthText.classList.add('medium');
-      indicator.classList.add('medium');
-      strengthText.querySelector('span:last-child').textContent = 'Medium password';
+    // Show error message based on error type
+    if (error.message.includes('Bucket not found')) {
+      showModernAlert('⚠️ Storage not configured. Please create a "campuz-avatars" bucket in Supabase Storage with public access.', '❌');
     } else {
-      strengthFill.classList.add('strong');
-      strengthText.classList.add('strong');
-      indicator.classList.add('strong');
-      strengthText.querySelector('span:last-child').textContent = 'Strong password';
+      showModernAlert('Failed to upload photo: ' + error.message, '❌');
     }
-  }
-
-  // ---- Auth handlers ----
-  async function handleLogin() {
-    const email = document.getElementById('login-email').value.trim();
-    const pass  = document.getElementById('login-pass').value;
-    if (!email || !pass) return showError('Please fill in all fields.');
-
-    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-    if (error) {
-      return showError(error.message);
-    }
-
-    // Redirect to app
-    window.location.href = 'index.html';
-  }
-
-  async function handleSignup() {
-    const name  = document.getElementById('signup-name').value.trim();
-    const email = document.getElementById('signup-email').value.trim();
-    const pass  = document.getElementById('signup-pass').value;
-    const passConfirm = document.getElementById('signup-pass-confirm').value;
-
-    if (!name || !email || !pass || !passConfirm) return showError('Please fill in all fields.');
-    if (pass.length < 6) return showError('Password must be at least 6 characters.');
-    if (pass !== passConfirm) return showError('Passwords do not match.');
-
-    // Create auth user with name in metadata (trigger will auto-create profile)
-    const { data, error } = await sb.auth.signUp({ 
-      email, 
-      password: pass,
-      options: {
-        data: { name: name }  // Store name in user metadata for trigger
-      }
-    });
     
-    if (error) return showError(error.message);
-    if (!data.user) return showError('Signup failed - please try again.');
+    // Restore initials on error
+    const initials = currentUser.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    document.getElementById('profile-avatar-initials').textContent = initials;
+  }
+}
 
-    // Redirect to app
-    window.location.href = 'index.html';
+// ---- Modal Controls ------------------------------------------
+function showEditProfileModal() {
+  document.getElementById('edit-name-input').value = currentUser.name;
+  document.getElementById('edit-profile-error').style.display = 'none';
+  document.getElementById('edit-profile-modal').classList.add('show');
+}
+
+function showChangeNameModal() {
+  showEditProfileModal();
+}
+
+function showChangePasswordModal() {
+  document.getElementById('new-password-input').value = '';
+  document.getElementById('confirm-password-input').value = '';
+  document.getElementById('change-password-error').style.display = 'none';
+  document.getElementById('change-password-modal').classList.add('show');
+}
+
+function showAboutModal() {
+  document.getElementById('about-modal').classList.add('show');
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).classList.remove('show');
+}
+
+// Close modals on outside click
+window.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.classList.remove('show');
+  }
+});
+
+// ---- Save Profile Name ---------------------------------------
+async function saveProfileName() {
+  const newName = document.getElementById('edit-name-input').value.trim();
+  const errorEl = document.getElementById('edit-profile-error');
+
+  if (!newName) {
+    errorEl.textContent = 'Name cannot be empty';
+    errorEl.style.display = 'block';
+    return;
   }
 
-  // ---- Check if already logged in ----
-  (async () => {
-    const { data: { session } } = await sb.auth.getSession();
-    const params = new URLSearchParams(window.location.search);
-    const reason = params.get('reason');
-    if (reason === 'account_missing') {
-      showError('Your account was deleted or is no longer available. Please sign up again.');
-    }
+  if (newName.length < 2) {
+    errorEl.textContent = 'Name must be at least 2 characters';
+    errorEl.style.display = 'block';
+    return;
+  }
 
-    if (session) {
-      const profile = await getCurrentUser();
-      if (!profile) {
-        await sb.auth.signOut();
-        showError('Your account was deleted or is no longer available. Please sign up again.');
-      } else {
-        window.location.href = 'index.html';
-        return;
-      }
-    }
+  try {
+    const { error } = await sb
+      .from('users')
+      .update({ name: newName })
+      .eq('id', currentUser.id);
 
-    // Check for tab parameter in URL (e.g., ?tab=signup)
-    const tab = params.get('tab');
-    if (tab === 'signup') {
-      switchTab('signup');
+    if (error) throw error;
+
+    // Update local state and UI
+    currentUser.name = newName;
+    populateUserUI();
+    closeModal('edit-profile-modal');
+    showToast('Profile updated successfully! ✅');
+
+  } catch (error) {
+    console.error('Failed to update name:', error);
+    errorEl.textContent = 'Failed to update name: ' + error.message;
+    errorEl.style.display = 'block';
+  }
+}
+
+// ---- Save New Password ---------------------------------------
+async function saveNewPassword() {
+  const newPassword = document.getElementById('new-password-input').value;
+  const confirmPassword = document.getElementById('confirm-password-input').value;
+  const errorEl = document.getElementById('change-password-error');
+
+  if (!newPassword || !confirmPassword) {
+    errorEl.textContent = 'Please fill in all fields';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    errorEl.textContent = 'Password must be at least 6 characters';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    errorEl.textContent = 'Passwords do not match';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    const { error } = await sb.auth.updateUser({ password: newPassword });
+
+    if (error) throw error;
+
+    closeModal('change-password-modal');
+    showToast('Password updated successfully! 🔒');
+
+  } catch (error) {
+    console.error('Failed to update password:', error);
+    errorEl.textContent = 'Failed to update password: ' + error.message;
+    errorEl.style.display = 'block';
+  }
+}
+
+// ---- Toast Notification --------------------------------------
+function showToast(message) {
+  const toast = document.createElement('div');
+  toast.className = 'toast-notification';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  setTimeout(() => toast.classList.add('show'), 10);
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// ============================================================
+// MODERN MODAL FUNCTIONS
+// ============================================================
+
+/**
+ * Show modern alert dialog (replaces native alert)
+ * @param {string} message - Message to display
+ * @param {string} icon - Emoji icon (default: ℹ️)
+ */
+function showModernAlert(message, icon = 'ℹ️') {
+  const modal = document.getElementById('modern-alert-modal');
+  const iconEl = modal.querySelector('.modern-modal-icon');
+  const messageEl = modal.querySelector('.modern-modal-message');
+  
+  iconEl.textContent = icon;
+  messageEl.textContent = message;
+  
+  modal.style.display = 'flex';
+  setTimeout(() => modal.classList.add('show'), 10);
+  
+  // Allow Enter key to close
+  const closeHandler = (e) => {
+    if (e.key === 'Enter') {
+      closeModernAlert();
+      document.removeEventListener('keydown', closeHandler);
     }
-  })();
+  };
+  document.addEventListener('keydown', closeHandler);
+}
+
+/**
+ * Close modern alert dialog
+ */
+function closeModernAlert() {
+  const modal = document.getElementById('modern-alert-modal');
+  modal.classList.remove('show');
+  setTimeout(() => {
+    modal.style.display = 'none';
+  }, 300);
+}
+
+/**
+ * Show modern confirm dialog (replaces native confirm)
+ * @param {string} message - Message to display
+ * @param {function} onConfirm - Callback when user confirms
+ * @param {string} confirmBtnText - Text for confirm button (default: "Confirm")
+ * @param {boolean} isDangerous - Use danger styling (default: false)
+ */
+function showModernConfirm(message, onConfirm, confirmBtnText = 'Confirm', isDangerous = false) {
+  const modal = document.getElementById('modern-confirm-modal');
+  const messageEl = modal.querySelector('.modern-modal-message');
+  const confirmBtn = document.getElementById('confirm-btn-text');
+  
+  messageEl.textContent = message;
+  confirmBtn.textContent = confirmBtnText;
+  
+  // Update button style
+  if (isDangerous) {
+    confirmBtn.className = 'modern-btn modern-btn-danger';
+  } else {
+    confirmBtn.className = 'modern-btn modern-btn-primary';
+  }
+  
+  // Store callback
+  modal.dataset.onConfirm = 'pending';
+  window._modernConfirmCallback = onConfirm;
+  
+  modal.style.display = 'flex';
+  setTimeout(() => modal.classList.add('show'), 10);
+  
+  // Allow Enter = confirm, Escape = cancel
+  const keyHandler = (e) => {
+    if (e.key === 'Enter') {
+      closeModernConfirm(true);
+      document.removeEventListener('keydown', keyHandler);
+    } else if (e.key === 'Escape') {
+      closeModernConfirm(false);
+      document.removeEventListener('keydown', keyHandler);
+    }
+  };
+  document.addEventListener('keydown', keyHandler);
+}
+
+/**
+ * Close modern confirm dialog and execute callback if confirmed
+ * @param {boolean} confirmed - Whether user confirmed
+ */
+function closeModernConfirm(confirmed) {
+  const modal = document.getElementById('modern-confirm-modal');
+  modal.classList.remove('show');
+  
+  setTimeout(() => {
+    modal.style.display = 'none';
+    
+    if (window._modernConfirmCallback) {
+      window._modernConfirmCallback(confirmed);
+      window._modernConfirmCallback = null;
+    }
+  }, 300);
+}
+
+/**
+ * Show voters modal with list of users who voted for an option
+ * @param {Array} voters - Array of voter objects {id, username, full_name, avatar_url}
+ * @param {string} optionName - Name of the option (e.g., "Option A")
+ */
+function showVotersModal(voters, optionName) {
+  const modal = document.getElementById('voters-modal');
+  const headerTitle = modal.querySelector('.modern-modal-header h3');
+  const votersList = modal.querySelector('.voters-list');
+  
+  headerTitle.textContent = `Voters for ${optionName}`;
+  votersList.innerHTML = '';
+  
+  if (voters.length === 0) {
+    votersList.innerHTML = '<p style="text-align: center; color: var(--muted); padding: 2rem;">No voters yet</p>';
+  } else {
+    voters.forEach(voter => {
+      const voterItem = document.createElement('div');
+      voterItem.className = 'voter-item';
+      
+      const avatarInitial = (voter.full_name || voter.username || '?').charAt(0).toUpperCase();
+      
+      voterItem.innerHTML = `
+        <div class="voter-avatar">${avatarInitial}</div>
+        <div class="voter-name">${voter.full_name || voter.username || 'Anonymous'}</div>
+      `;
+      
+      votersList.appendChild(voterItem);
+    });
+  }
+  
+  modal.style.display = 'flex';
+  setTimeout(() => modal.classList.add('show'), 10);
+}
+
+/**
+ * Close voters modal
+ */
+function closeVotersModal() {
+  const modal = document.getElementById('voters-modal');
+  modal.classList.remove('show');
+  setTimeout(() => {
+    modal.style.display = 'none';
+  }, 300);
+}
+
+// Close modals on overlay click
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modern-modal-overlay')) {
+    if (e.target.id === 'modern-alert-modal') closeModernAlert();
+    if (e.target.id === 'modern-confirm-modal') closeModernConfirm(false);
+    if (e.target.id === 'voters-modal') closeVotersModal();
+  }
+});
+
 </script>
 </body>
 </html>
