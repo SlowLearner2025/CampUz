@@ -30,6 +30,10 @@
       --radius:   16px;
     }
 
+    html {
+      overscroll-behavior-y: none;
+    }
+
     body {
       background: var(--bg);
       color: var(--text);
@@ -614,6 +618,27 @@
     opacity: 0,
     ease: 'power3.out'
   });
+
+  // ---- Prevent mobile pull-to-refresh ------------------------
+  (function preventPullToRefresh() {
+    let touchStartY = 0;
+
+    document.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+      if (e.touches.length !== 1) return;
+      const currentY = e.touches[0].clientY;
+      const pullingDown = currentY > touchStartY + 8;
+      const scrollTop = (document.scrollingElement || document.documentElement).scrollTop;
+
+      if (pullingDown && scrollTop <= 0) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+  })();
 
   // ---- Tab Switch ----
   function switchTab(tab) {
