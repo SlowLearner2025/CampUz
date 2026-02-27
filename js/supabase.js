@@ -22,14 +22,22 @@ async function getCurrentUser() {
   if (!user) return null;
 
   // Fetch extra profile data from our public.users table
-  try {
-    const { data: profile, error } = await sb.from('users').select('*').eq('id', user.id).single();
-    if (error || !profile) return null;
-    return profile;
-  } catch (err) {
-    console.error('Failed to fetch profile:', err);
-    return null;
+  // Retry briefly because profile row creation can be slightly delayed after signup.
+  const maxAttempts = 4;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const { data: profile, error } = await sb.from('users').select('*').eq('id', user.id).single();
+      if (!error && profile) return profile;
+    } catch (err) {
+      console.error('Failed to fetch profile (attempt ' + attempt + '):', err);
+    }
+
+    if (attempt < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 350));
+    }
   }
+
+  return null;
 }
 
 // ---- Helper: format timestamp --------------------------------
