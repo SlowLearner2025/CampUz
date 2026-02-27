@@ -752,8 +752,6 @@
     if (error) return showError(error.message);
     if (!data.user) return showError('Signup failed - please try again.');
 
-    // Show verification pending message - user needs to check email
-    showError('✅ Signup successful! Please check your email to verify your account. A verification link has been sent to ' + email, true);
     
     // Clear form
     document.getElementById('signup-name').value = '';
