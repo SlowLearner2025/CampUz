@@ -70,6 +70,7 @@ body {
   font-size: 1.7rem;
   background: linear-gradient(135deg, #6c63ff, #ff6584);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 2.5rem;
   padding-left: 0.5rem;
@@ -1015,6 +1016,7 @@ body {
   font-weight: 700;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -1971,6 +1973,7 @@ body {
   font-weight: 700;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -2257,6 +2260,7 @@ body {
   font-family: 'Syne', sans-serif;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -2325,16 +2329,6 @@ body {
 .voters-modal .modern-btn {
   margin: 1.5rem 2rem;
   max-width: none;
-}
-
-/* ============================================================
-   RESPONSIVE - PROFILE
-   ============================================================ */
-  font-size: 0.72rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: 0.2rem;
 }
 
 /* ============================================================
