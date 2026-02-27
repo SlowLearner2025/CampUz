@@ -16,12 +16,6 @@
   <!-- Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-  <!-- Vercel Web Analytics -->
-  <script>
-    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-  </script>
-  <script defer src="/_vercel/insights/script.js"></script>
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -77,6 +71,7 @@
       letter-spacing: -1px;
       background: linear-gradient(135deg, #6c63ff, #ff6584);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
@@ -715,9 +710,6 @@
 
     const { error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) {
-      if (error.message.includes('Email not confirmed')) {
-        return showError('Please confirm your email first. Check your inbox for a verification link.');
-      }
       return showError(error.message);
     }
 
@@ -735,49 +727,44 @@
     if (pass.length < 6) return showError('Password must be at least 6 characters.');
     if (pass !== passConfirm) return showError('Passwords do not match.');
 
-    // Get the base URL for the verification redirect
-    const baseUrl = window.location.origin;
-    const redirectUrl = `${baseUrl}/verify.html`;
-
     // Create auth user with name in metadata (trigger will auto-create profile)
     const { data, error } = await sb.auth.signUp({ 
       email, 
       password: pass,
       options: {
-        data: { name: name },  // Store name in user metadata for trigger
-        emailRedirectTo: redirectUrl  // Send verification to verify.html
+        data: { name: name }  // Store name in user metadata for trigger
       }
     });
     
     if (error) return showError(error.message);
     if (!data.user) return showError('Signup failed - please try again.');
 
-    
-    // Clear form
-    document.getElementById('signup-name').value = '';
-    document.getElementById('signup-email').value = '';
-    document.getElementById('signup-pass').value = '';
-    document.getElementById('signup-pass-confirm').value = '';
+    // Redirect to app
+    window.location.href = 'index.html';
   }
 
   // ---- Check if already logged in ----
   (async () => {
-    const { data: { session } } = await sb.auth.getSession();
     const params = new URLSearchParams(window.location.search);
     const reason = params.get('reason');
     if (reason === 'account_missing') {
+      await sb.auth.signOut();
       showError('Your account was deleted or is no longer available. Please sign up again.');
+      switchTab('signup');
+      return;
     }
+
+    const { data: { session } } = await sb.auth.getSession();
 
     if (session) {
       const profile = await getCurrentUser();
       if (!profile) {
         await sb.auth.signOut();
         showError('Your account was deleted or is no longer available. Please sign up again.');
+      } else {
+        window.location.href = 'index.html';
         return;
       }
-      window.location.href = 'index.html';
-      return;
     }
 
     // Check for tab parameter in URL (e.g., ?tab=signup)
